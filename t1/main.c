@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 typedef unsigned char byte;
 
@@ -56,34 +57,65 @@ byte to_number(char c)
         return (byte)(c - '0' + 52);
     }
 
-    return (byte)(c - 'A');   
+    if (c >= 'A' && c <= 'Z')
+    {
+        return (byte)(c - 'A');   
+    }
+
+    if (c >= 'a' && c <= 'z')
+    {
+        return (byte)(c - 'a' + (char)26);   
+    }
+
+    printf("Invalid char used in base64 conversion. Check string.");
+    exit(-1);
+    
 }
 
 raw from_base64(char *string)
 {
     raw data;
-    data.size = strlen(string) * 2;
-    data.data = (byte *)malloc(sizeof(byte));
-
-    int mask = 0b11111100;
+    data.size = (int)ceil(3*strlen(string)/4.0);
+    data.data = (byte *)calloc(1, data.size * sizeof(byte));
 
     for (int i = 0; i < (int)strlen(string); i++)
     {
         byte val = to_number(string[i]);
-        byte mask = 0b11111100;
 
-        printf("%x", mask);
-    }
+        if(i % 4 == 0)
+        {
+            data.data[3*(i/4)] |= val << 2;
+        }
+
+        else if (i % 4 == 1)
+        {
+            data.data[3*(i/4)] |= val >> 4;
+            data.data[3*(i/4)+1] |= val << 4;
+        }
+
+        else if (i % 4 == 2)
+        {
+            data.data[3*(i/4)+1] |= val >> 2;
+            data.data[3*(i/4)+2] |= val << 6;
+        }
+
+        else
+        {
+            data.data[3*(i/4)+2] |= val;
+        }
+
+    }      
     
+    return data;
 }
 
 char *to_hex(raw data)
 {
-    char *string = (char *)malloc(data.size * sizeof(char));
+    char *string = (char *)malloc(2 * data.size * sizeof(char));
     
-    for (int i = 0; i < data.size; i += 2)
+    for (int i = 0; i < data.size; i++)
     {
-        sprintf(&string[i], "%x", data.data[i]);
+        sprintf(&string[2*i], "%x", data.data[i]);
     }
 
     return string;
@@ -96,15 +128,9 @@ char *to_base64(raw data)
 
 int main()
 {
-    raw data = from_hex("1F");
+    raw data = from_base64("abcdefgh");
     char *string = to_hex(data);
-    printf("%s\n", string);
-    raw data_A = from_hex("FFFFFFFF");
-    raw data_B = from_hex("FFFFFFFF");
-
-    raw result = xor(data_A, data_B);
-    string = to_hex(result);
-    printf("%s\n", string);
+    printf("HEX string (full) = %s\n", string);
 
     return 0;
 }
