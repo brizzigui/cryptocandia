@@ -67,9 +67,48 @@ byte to_number(char c)
         return (byte)(c - 'a' + (char)26);   
     }
 
-    printf("Invalid char used in base64 conversion. Check string.");
+    if (c == '=')
+    {
+        return (byte)0;
+    }
+
+    printf("Invalid char used in conversion from base64. Check string.");
     exit(-1);
     
+}
+
+
+char to_symbol(byte b)
+{
+    if (b == 62)   
+    {
+        return '+';
+    }
+    
+    if (b == 63)   
+    {
+        return '/';
+    }
+
+    if (b >= 52 && b <= 61)   
+    {
+        return (char)('0' + b - 52);
+    }
+
+    if (b >= 0 && b <= 25)
+    {
+        return (char)('A' + b);   
+    }
+
+    if (b >= 26 && b <= 51)
+    {
+        return (char)('a' + b - 26);   
+    }
+
+
+
+    printf("Invalid char used conversion to base64. Check string.");
+    exit(-1);
 }
 
 raw from_base64(char *string)
@@ -111,7 +150,7 @@ raw from_base64(char *string)
 
 char *to_hex(raw data)
 {
-    char *string = (char *)malloc(2 * data.size * sizeof(char));
+    char *string = (char *)malloc((2 * data.size + 1) * sizeof(char));
     
     for (int i = 0; i < data.size; i++)
     {
@@ -123,14 +162,61 @@ char *to_hex(raw data)
 
 char *to_base64(raw data)
 {
+    int str_size = (int)ceil(4 * data.size/3.0) + 1;
+    char *string = (char *)malloc(str_size * sizeof(char));
+    byte a, b = 0;
 
+    for (int i = 0; i < str_size-1; i++)
+    {
+        if(i % 4 == 0)
+        {
+            byte val = data.data[3*(i/4)];
+
+            a |= val >> 2;
+            string[i] = to_symbol(a);
+            a = 0;
+
+            b |= val << 4;
+            b &= 0b00110000;
+        }
+
+        else if (i % 4 == 1)
+        {
+            byte val = data.data[3*(i/4) + 1];
+
+            b |= val >> 4;
+            string[i] = to_symbol(b);
+            b = 0;
+            
+            a |= val << 2;
+            a &= 0b00111100;
+        }
+
+        else if (i % 4 == 2)
+        {
+            byte val = data.data[3*(i/4) + 2];
+            a |= val >> 6;
+            string[i] = to_symbol(a);
+            a = 0;
+
+            i++;
+
+            b |= val;
+            b &= 0b00111111;
+            string[i] = to_symbol(b);
+            b = 0;
+        }
+    }
+    
+    string[str_size-1] = '\0';
+    return string;
 }
 
 int main()
 {
-    raw data = from_base64("abcdefgh");
-    char *string = to_hex(data);
-    printf("HEX string (full) = %s\n", string);
+    raw data = from_base64("shadowsfromthedistancecomes/");
+    char *string = to_base64(data);
+    printf("BASE64 reverse translation = %s", string);
 
     return 0;
 }
