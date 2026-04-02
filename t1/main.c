@@ -284,7 +284,7 @@ void brute_force(raw data)
 {
     float threashold = 0.5;
     char *tmp = (char *)malloc(sizeof(char) * (data.size+1));
-    tmp[data.size+1] = '\0';
+    tmp[data.size] = '\0';
 
     for (int c = 0; c < 255; c++)
     {
