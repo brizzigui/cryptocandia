@@ -10,7 +10,14 @@ Decodificação força bruta de cifra xor com chave de apenas 1 byte
 
 #include "representation.h"
 
-float validate_text(const char *locale, char* string)
+
+/*
+    Checks if a string is likely decrypted plaintext or a useless attempt.
+    `locale` is a const char *, accepted = {`"pt-br"`}
+    `method` is a const char *, accepted = {`"char_frequency"`}
+    `string` is a char *, needs to be `NULL` terminated.
+*/
+float validate_text(const char *locale, const char *method, char* string)
 {
     float score = 0;
     float ngram[26] = {};
@@ -63,7 +70,7 @@ void brute_force(raw data)
             tmp[b] = data.data[b] ^ (byte)c;
         }
 
-        float score = validate_text("pt-br", tmp);
+        float score = validate_text("pt-br", "char_frequency", tmp);
         if(score < threashold)
         {
             printf("Found possible solution using key '%c'.\n", c);

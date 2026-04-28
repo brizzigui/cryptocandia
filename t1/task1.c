@@ -23,12 +23,9 @@ raw xor(raw A, raw B)
 
 int main()
 {
-    raw dataA = from_hex("ABCDEF");
-    raw dataB = from_hex("FEDCBA");
-    raw result = xor(dataA, dataB);
-
-    char *result_str = to_hex(result);
-    printf("Resultado XOR: 0x%s\n", result_str);
+    raw dataA = from_base64("QWNvcmRhUGVkcmluaG9RdWVob2pldGVtY2FtcGVvbmF0bw==");
+    char *result_str = to_base64(dataA);
+    printf("Resultado reverso: %s\n", result_str);
 
     return 0;
 }
