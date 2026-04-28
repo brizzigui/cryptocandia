@@ -84,19 +84,35 @@ char to_symbol(byte b)
         return (char)('a' + b - 26);   
     }
 
-
-
     printf("Invalid char used conversion to base64. Check string.");
     exit(-1);
 }
 
+int base64_padding_len(char *string)
+{
+    int last = strlen(string)-1;
+    if (string[last-1] == '=')
+    {
+        return 2;
+    }
+
+    else if (string[last] == '=')
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
 raw from_base64(char *string)
 {
+    int string_size = strlen(string) - base64_padding_len(string);
+
     raw data;
-    data.size = (int)ceil(3*strlen(string)/4.0);
+    data.size = (int)(3*string_size/4.0);
     data.data = (byte *)calloc(1, data.size * sizeof(byte));
 
-    for (int i = 0; i < (int)strlen(string); i++)
+    for (int i = 0; i < string_size; i++)
     {
         byte val = to_number(string[i]);
 
@@ -136,19 +152,38 @@ char *to_hex(raw data)
         sprintf(&string[2*i], "%02x", data.data[i]);
     }
 
+    string[2 * data.size] = '\0';
+
     return string;
+}
+
+int base64_padding_for_str(int size)
+{
+    if (size % 3 == 2)
+    {
+        return 1;
+    }
+
+    else if (size % 3 == 1)
+    {
+        return 2;
+    }
+
+    return 0;
 }
 
 char *to_base64(raw data)
 {
     int str_size = (int)ceil(4 * data.size/3.0) + 1;
-    char *string = (char *)malloc(str_size * sizeof(char));
-    byte a, b = 0;
+    int padding_size = base64_padding_for_str(data.size);
+    char *string = (char *)malloc((str_size+padding_size) * sizeof(char));
+    byte a = 0, b = 0;
 
     for (int i = 0; i < str_size-1; i++)
     {
         if(i % 4 == 0)
         {
+            if (3*(i/4) >= data.size) break;
             byte val = data.data[3*(i/4)];
 
             a |= val >> 2;
@@ -161,6 +196,12 @@ char *to_base64(raw data)
 
         else if (i % 4 == 1)
         {
+            if (3*(i/4)+1 >= data.size)
+            {
+                string[i] = to_symbol(b);
+                break;
+            }
+
             byte val = data.data[3*(i/4) + 1];
 
             b |= val >> 4;
@@ -173,21 +214,37 @@ char *to_base64(raw data)
 
         else if (i % 4 == 2)
         {
+            if (3*(i/4)+2 >= data.size)
+            {
+                string[i] = to_symbol(a);
+                break;
+            }
+
             byte val = data.data[3*(i/4) + 2];
+
             a |= val >> 6;
             string[i] = to_symbol(a);
             a = 0;
 
             i++;
 
-            b |= val;
-            b &= 0b00111111;
+            b = val & 0b00111111;
             string[i] = to_symbol(b);
             b = 0;
         }
     }
+
+    if (padding_size == 2)
+    {
+        string[str_size+padding_size-3] = '=';
+        string[str_size+padding_size-2] = '=';
+    }
+
+    if (padding_size == 1)
+        string[str_size+padding_size-2] = '=';
     
-    string[str_size-1] = '\0';
+    
+    string[str_size+padding_size-1] = '\0';
     return string;
 }
 
