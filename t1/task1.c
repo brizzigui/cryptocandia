@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
 Tarefa 1 de Criptografia para Segurança de Dados
@@ -21,28 +22,77 @@ raw xor(raw A, raw B)
     return tmp;
 }
 
-int main()
+void help()
 {
-    printf("Conversao BASE64 -> HEX:\n");
-    raw dataA = from_base64("QWNvcmRhUGVkcmluaG9RdWVob2pldGVtY2FtcGVvbmF0bw==");
-    char *result_A = to_hex(dataA);
-    printf("Resultado: %s\n", result_A);
+    printf("Help:\n");
+    printf("\thelp: help menu.\n");
+    printf("\thex-to-base64 [DATA]: takes hex input and converts to base64.\n");
+    printf("\tbase64-to-hex [DATA]: takes base64 input and converts to hex.\n");
+    printf("\txor [input=base64/input=hex] [DATA] [DATA]: takes two inputs and outputs their xor.\n");
+}
 
-    printf("Conversao HEX -> BASE64:\n");
-    raw dataB = from_hex("41636f72646150656472696e686f517565686f6a6574656d63616d70656f6e61746f");
-    char *result_B = to_base64(dataB);
-    printf("Resultado: %s\n", result_B);
+int main(int argc, char *argv[])
+{
+    if (argc >= 2 && argc <= 5)
+    {
+        if (strcmp(argv[1], "help") == 0)
+        {
+            help();
+        }
+        
+        else if (strcmp(argv[1], "hex-to-base64") == 0 && argc == 3)
+        {
+            raw data = from_hex(argv[2]);
+            char *string = to_base64(data);
+            printf("BASE64: %s\n", string);
+            free(string);
+        }
 
-    printf("XOR entre dois dados:\n");
-    raw plain = from_hex("41636f72646150656472696e686f517565686f6a6574656d63616d70656f6e61746f");
-    raw key = from_hex("0b021e0701003e0a0d060c0807063d1a0b0f0e060a1a020c0f0e03170403010f130e");
-    raw cipher = xor(plain, key);
+        else if (strcmp(argv[1], "base64-to-hex") == 0 && argc == 3)
+        {
+            raw data = from_base64(argv[2]);
+            char *string = to_hex(data);
+            printf("HEX: 0x%s\n", string);
+            free(string);
+        }
 
-    char *result_cipher_hex = to_hex(cipher);
-    printf("Resultado em HEX: %s\n", result_cipher_hex);
-    free(result_cipher_hex);
-    char *result_cipher_base64 = to_base64(cipher);
-    printf("Resultado em BASE64: %s\n", result_cipher_base64);
+        else if (strcmp(argv[1], "xor") == 0  && argc == 5)
+        {
+            raw dataA, dataB;
 
+            if (strcmp(argv[2], "input=base64") == 0)
+            {
+                dataA = from_base64(argv[3]);
+                dataB = from_base64(argv[4]);
+            }
+
+            else if (strcmp(argv[2], "input=hex") == 0)
+            {
+                dataA = from_hex(argv[3]);
+                dataB = from_hex(argv[4]);
+            }
+
+            else
+            {
+                printf("Invalid option. Try using 'help' for help.");
+                return 0;
+            }
+            
+            raw result = xor(dataA, dataB);
+            printf("RESULT:\n");
+            char *string = to_hex(result);
+            printf("HEX: 0x%s\n", string);
+            free(string);
+            string = to_base64(result);
+            printf("BASE64: %s\n", string);
+            free(string);
+        }
+    }
+
+    else
+    {
+        printf("Invalid option. Try using 'help' for help.");
+    }
+    
     return 0;
 }
